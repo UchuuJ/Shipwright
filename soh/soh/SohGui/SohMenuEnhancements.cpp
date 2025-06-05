@@ -1565,6 +1565,9 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Hookshot Reach Multiplier: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_CHEAT("HookshotReachMultiplier"))
         .Options(FloatSliderOptions().Format("%.2f").Min(1.0f).Max(5.0f));
+    AddWidget(path, "Time Multiplier: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
+        .CVar(CVAR_CHEAT("TimeOfDayMultiplier"))
+        .Options(FloatSliderOptions().Format("%.2f").Min(2.0f).Max(5.0f).DefaultValue(1.0f));
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Misc", WIDGET_SEPARATOR_TEXT);
