@@ -2325,9 +2325,12 @@ u8 Item_Give(PlayState* play, u8 item) {
             gSaveContext.healthCapacity -= 0x10;
             gSaveContext.health -= 0x10;
         }
+        //My Nohit code goes here
+        NoHitModeCheck();
         gSaveContext.ship.stats.heartContainers++;
         return Return_Item(item, MOD_NONE, ITEM_NONE);
     } else if (item == ITEM_HEART) {
+        NoHitModeCheck();
         osSyncPrintf("回復ハート回復ハート回復ハート\n"); // "Recovery Heart"
         if (play != NULL) {
             Health_ChangeBy(play, 0x10);
@@ -2860,6 +2863,18 @@ void Interface_LoadActionLabelB(PlayState* play, u16 action) {
     interfaceCtx->unk_1FA = 1;
 }
 
+void NoHitModeCheck(){
+    if(CVarGetInteger(CVAR_ENHANCEMENT("NoHitMode"),0)){
+         Save_DeleteFile(0);
+         Audio_PlaySoundGeneral(NA_SE_SY_ERROR, &gSfxDefaultPos, 4,
+                                                   &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+         SET_NEXT_GAMESTATE(&gPlayState->state, TitleSetup_Init, GameState);
+         gPlayState->state.running = false;
+
+         //SET_NEXT_GAMESTATE(&gPlayState->state, Opening_Init, OpeningContext);
+    }
+}
+
 s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
     u16 heartCount;
     u16 healthLevel;
@@ -2871,6 +2886,10 @@ s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
     if (healthChange < 0) {
         gSaveContext.ship.stats.count[COUNT_DAMAGE_TAKEN] += -healthChange;
     }
+
+    //This might have to be its own function
+    //Seems Health_ChangeBy isn't called by Bottle or hearts
+    NoHitModeCheck();
 
     // If one-hit ko mode is on, any damage kills you and you cannot gain health.
     if (GameInteractor_OneHitKOActive()) {
