@@ -5345,13 +5345,19 @@ void Interface_Draw(PlayState* play) {
                         break;
                 }
             }
-
+            
+            if( gSaveContext.rupees < 0 && CVarGetInteger(CVAR_ENHANCEMENT("RupeeTaxman"),0)){
+                Interface_DrawTextLineOnBuffer(play->state.gfxCtx, "OH NO Link is in debt, the debt collectors have arrived!", 0, 0,
+                                       255, 255, 80, 255, 0.8f, true);
+            }
             if (GameInteractor_Should(VB_RENDER_RUPEE_COUNTER, true)) {
                 // Rupee Counter
                 gDPPipeSync(OVERLAY_DISP++);
 
                 if (gSaveContext.rupees == CUR_CAPACITY(UPG_WALLET)) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 120, 255, 0, interfaceCtx->magicAlpha);
+                } else if (gSaveContext.rupees < 0 && CVarGetInteger(CVAR_ENHANCEMENT("RupeeTaxman"),0)) {
+                    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 63, 24, interfaceCtx->magicAlpha);
                 } else if (gSaveContext.rupees != 0) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
                 } else {
@@ -5362,11 +5368,23 @@ void Interface_Draw(PlayState* play) {
                                   TEXEL0, 0, PRIMITIVE, 0);
 
                 interfaceCtx->counterDigits[0] = interfaceCtx->counterDigits[1] = 0;
-                interfaceCtx->counterDigits[2] = gSaveContext.rupees;
+                if(gSaveContext.rupees < 0 && CVarGetInteger(CVAR_ENHANCEMENT("RupeeTaxman"),0)){
+                  interfaceCtx->counterDigits[2] = (gSaveContext.rupees * -1)-1;  
+                } else {
+                    interfaceCtx->counterDigits[2] = gSaveContext.rupees;
+                }
 
-                if ((interfaceCtx->counterDigits[2] > 9999) || (interfaceCtx->counterDigits[2] < 0)) {
+                if ((interfaceCtx->counterDigits[2] > 9999) || (interfaceCtx->counterDigits[2] < 0 && CVarGetInteger(CVAR_ENHANCEMENT("RupeeTaxman"),0) == 0)) {
                     interfaceCtx->counterDigits[2] &= 0xDDD;
                 }
+
+                /*if ((interfaceCtx->counterDigits[2] > 9999)) {
+                    interfaceCtx->counterDigits[2] &= 0xDDD;
+                }*/
+
+                /*if ((interfaceCtx->counterDigits[2] < 0)) {
+                    interfaceCtx->counterDigits[2] =  interfaceCtx->counterDigits[2];
+                }*/
 
                 while (interfaceCtx->counterDigits[2] >= 100) {
                     interfaceCtx->counterDigits[0]++;
@@ -6663,7 +6681,7 @@ void Interface_Update(PlayState* play) {
     }
 
     HealthMeter_Update(play);
-
+ //lmao
     if ((gSaveContext.timerState >= 3) && (play->pauseCtx.state == 0) && (play->pauseCtx.debugState == 0) &&
         (msgCtx->msgMode == MSGMODE_NONE) && !(player->stateFlags2 & PLAYER_STATE2_ATTEMPT_PLAY_FOR_ACTOR) &&
         (play->transitionTrigger == TRANS_TRIGGER_OFF) && (play->transitionMode == TRANS_MODE_OFF) &&
@@ -6700,7 +6718,15 @@ void Interface_Update(PlayState* play) {
                                        &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
             }
         } else {
-            gSaveContext.rupeeAccumulator = 0;
+            if(CVarGetInteger(CVAR_ENHANCEMENT("RupeeTaxman"),0)){
+                gSaveContext.rupeeAccumulator++;
+                gSaveContext.rupees--;
+                 Audio_PlaySoundGeneral(NA_SE_SY_RUPY_COUNT, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
+                                       &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+
+            } else {
+                gSaveContext.rupeeAccumulator = 0;
+            }
         }
         if (gSaveContext.rupeeAccumulator == 0 && gSaveContext.ship.pendingSale != ITEM_NONE) {
             u16 tempSaleItem = gSaveContext.ship.pendingSale;
@@ -6900,9 +6926,50 @@ void Interface_Update(PlayState* play) {
     }
 }
 
+void Interface_DrawTextCharacterOnExistingBuffer(GraphicsContext* gfx, int16_t x, int16_t y, void* texture, uint16_t colorR,
+                                 uint16_t colorG, uint16_t colorB, uint16_t colorA, float textScale,
+                                 uint8_t textShadow) {
+
+                                      //Drawing Char
+    lusprintf(__FILE__, __LINE__, 2, "Drawing Char X: %i Y: %i",x,y);
+
+    int32_t scale = R_TEXT_CHAR_SCALE * textScale;
+    int32_t sCharTexSize = (scale / 100.0f) * 16.0f;
+    int32_t sCharTexScale = 1024.0f / (scale / 100.0f);
+
+    OPEN_DISPS(gfx);
+
+    gDPPipeSync(OVERLAY_DISP++);
+
+    gDPLoadTextureBlock_4b(OVERLAY_DISP++, texture, G_IM_FMT_I, FONT_CHAR_TEX_WIDTH, FONT_CHAR_TEX_HEIGHT, 0,
+                           G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                           G_TX_NOLOD);
+
+    if (textShadow) {
+        // Draw drop shadow
+        gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, colorA);
+        gSPTextureRectangle(OVERLAY_DISP++, (x + R_TEXT_DROP_SHADOW_OFFSET) << 2, (y + R_TEXT_DROP_SHADOW_OFFSET) << 2,
+                            (x + R_TEXT_DROP_SHADOW_OFFSET + sCharTexSize) << 2,
+                            (y + R_TEXT_DROP_SHADOW_OFFSET + sCharTexSize) << 2, G_TX_RENDERTILE, 0, 0, sCharTexScale,
+                            sCharTexScale);
+    }
+
+    gDPPipeSync(OVERLAY_DISP++);
+
+    // Draw normal text
+    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, colorR, colorG, colorB, colorA);
+    gSPTextureRectangle(OVERLAY_DISP++, x << 2, y << 2, (x + sCharTexSize) << 2, (y + sCharTexSize) << 2,
+                        G_TX_RENDERTILE, 0, 0, sCharTexScale, sCharTexScale);
+
+    CLOSE_DISPS(gfx);
+}
+
+
 void Interface_DrawTextCharacter(GraphicsContext* gfx, int16_t x, int16_t y, void* texture, uint16_t colorR,
                                  uint16_t colorG, uint16_t colorB, uint16_t colorA, float textScale,
                                  uint8_t textShadow) {
+    //Drawing Char
+    lusprintf(__FILE__, __LINE__, 2, "Drawing Char X: %i Y: %i",x,y);
 
     int32_t scale = R_TEXT_CHAR_SCALE * textScale;
     int32_t sCharTexSize = (scale / 100.0f) * 16.0f;
@@ -6945,8 +7012,9 @@ uint16_t Interface_DrawTextLine(GraphicsContext* gfx, char text[], int16_t x, in
     void* texture;
     const char* processedText = Interface_ReplaceSpecialCharacters(text);
     uint8_t textLength = strlen(processedText);
-
+         lusprintf(__FILE__, __LINE__, 2, "ProcessIngText: %s",processedText);
     for (uint16_t i = 0; i < textLength; i++) {
+         lusprintf(__FILE__, __LINE__, 2, "What is i, what char?: %i %c",i,processedText[i]);
         if (processedText[i] == '\n') {
             lineOffset += 15 * textScale;
             kerningOffset = 0;
@@ -6956,6 +7024,38 @@ uint16_t Interface_DrawTextLine(GraphicsContext* gfx, char text[], int16_t x, in
             if (textureIndex != 0) {
                 texture = Ship_GetCharFontTexture(processedText[i]);
                 Interface_DrawTextCharacter(gfx, x + kerningOffset, y + lineOffset, texture, colorR, colorG, colorB,
+                                            colorA, textScale, textShadow);
+            }
+            kerningOffset +=
+                (uint16_t)(Ship_GetCharFontWidth(processedText[i]) * (R_TEXT_CHAR_SCALE / 100.0f) * textScale);
+        }
+    }
+
+    return kerningOffset;
+}
+
+uint16_t Interface_DrawTextLineOnBuffer(GraphicsContext* gfx, char text[], int16_t x, int16_t y, uint16_t colorR,
+                                uint16_t colorG, uint16_t colorB, uint16_t colorA, float textScale,
+                                uint8_t textShadow) {
+
+    uint16_t textureIndex;
+    uint16_t kerningOffset = 0;
+    uint16_t lineOffset = 0;
+    void* texture;
+    const char* processedText = Interface_ReplaceSpecialCharacters(text);
+    uint8_t textLength = strlen(processedText);
+         lusprintf(__FILE__, __LINE__, 2, "ProcessIngText: %s",processedText);
+    for (uint16_t i = 0; i < textLength; i++) {
+         lusprintf(__FILE__, __LINE__, 2, "What is i, what char?: %i %c",i,processedText[i]);
+        if (processedText[i] == '\n') {
+            lineOffset += 15 * textScale;
+            kerningOffset = 0;
+        } else {
+            textureIndex = processedText[i] - 32;
+
+            if (textureIndex != 0) {
+                texture = Ship_GetCharFontTexture(processedText[i]);
+                Interface_DrawTextCharacterOnExistingBuffer(gfx, x + kerningOffset, y + lineOffset, texture, colorR, colorG, colorB,
                                             colorA, textScale, textShadow);
             }
             kerningOffset +=

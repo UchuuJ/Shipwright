@@ -1421,6 +1421,9 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip("Changes Heart Piece and Heart Container functionality.\n\n"
                                            " - Each Heart Container or full Heart Piece reduces Link's Hearts by 1.\n"
                                            " - Can be enabled retroactively after a File has already started."));
+    AddWidget(path, "Rupee TAXMAN Mode", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("RupeeTaxman"))
+        .Options(CheckboxOptions().Tooltip("Rupees reduce over time, Link suffers from debt after 0."));
     AddWidget(path, "Additional Traps", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("ExtraTraps.Enabled"))
         .Options(CheckboxOptions().Tooltip("Enables additional Trap variants."));
@@ -1568,6 +1571,7 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Time Multiplier: %.2fx", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_CHEAT("TimeOfDayMultiplier"))
         .Options(FloatSliderOptions().Format("%.2f").Min(2.0f).Max(5.0f).DefaultValue(1.0f));
+    
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Misc", WIDGET_SEPARATOR_TEXT);
