@@ -14,6 +14,9 @@
 #include "soh/Enhancements/enhancementTypes.h"
 #include "soh/ShipUtils.h"
 
+//GCC 14 needs this
+#include "soh/SaveManager.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -2865,6 +2868,7 @@ void Interface_LoadActionLabelB(PlayState* play, u16 action) {
 
 void NoHitModeCheck(){
     if(CVarGetInteger(CVAR_ENHANCEMENT("NoHitMode"),0)){
+        //Breaks in GCC 14 :woozy:
          Save_DeleteFile(0);
          Audio_PlaySoundGeneral(NA_SE_SY_ERROR, &gSfxDefaultPos, 4,
                                                    &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
