@@ -1090,6 +1090,12 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip(
             "Disables Heart Drops, but not Heart Placements, like from a Deku Scrub running off.\n"
             "This simulates Hero Mode from other games in the series."));
+    
+    AddWidget(path, "No Hit Mode", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("NoHitMode"))
+        .Options(CheckboxOptions().Tooltip(
+            "If Linky gets hit, you will be kicked from the game and your save deleted.\n"
+        ));
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Drops", WIDGET_SEPARATOR_TEXT);
