@@ -91,7 +91,7 @@ Rebuild the game and launch it, then load a save file. You should see that the t
         .CVar(CVAR_CHEAT("HookshotReachMultiplier"))
         .Options(FloatSliderOptions().Format("%.2f").Min(1.0f).Max(5.0f));
 ```
-This adds an `Widget` which sets an CVAR, which then sets the options of the slider.
+This adds an `Widget` which sets a CVar, which then sets the options of the slider.
 The float values being passed in here are `minimum` and `maximum` respectively. We'll make our minimum 0.2 to allow it to move slower, and our maximum 5.0 to allow it to move up to 5x faster. We'll also set the default to 1.0 so that it doesn't change the behavior by default. Copy this line and paste it below, then make the relevant changes:
 
 ```cpp
